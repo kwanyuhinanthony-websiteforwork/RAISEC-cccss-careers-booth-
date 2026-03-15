@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>職業靈魂導航 - 2026 最終整合版</title>
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --overlay: rgba(255, 255, 255, 0.94);
+            --R: #ff4757; --I: #1e90ff; --A: #ffa502; --S: #2ed573; --E: #eccc68; --C: #a29bfe;
+        }
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            margin: 0; height: 100vh; display: flex; justify-content: center; align-items: center;
+            background: url('bg1.png') no-repeat center center/cover #e5e9f0;
+        }
+        #game-container {
+            background: var(--overlay); padding: 2rem; border-radius: 30px;
+            box-shadow: 0 20px 45px rgba(0,0,0,0.15); width: 90%; max-width: 500px;
+            text-align: center; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.4);
+        }
+        h1 { color: #2c3e50; font-size: 1.6rem; margin-top: 0; }
+        .progress { font-size: 0.85rem; color: #7f8c8d; margin-bottom: 0.5rem; letter-spacing: 1px; }
+        .question-text {
+            font-size: 1.3rem; margin-bottom: 2rem; min-height: 120px; color: #333;
+            line-height: 1.6; display: flex; align-items: center; justify-content: center;
+        }
+        .btn-group { display: flex; gap: 1rem; }
+        button { 
+            padding: 1.2rem 0.5rem; border: none; border-radius: 15px; 
+            font-size: 1.05rem; font-weight: bold; cursor: pointer; 
+            transition: 0.2s; flex: 1; 
+        }
+        .btn-yes { background-color: #2ecc71; color: white; box-shadow: 0 4px 0 #27ae60; }
+        .btn-no { background-color: #ff7675; color: white; box-shadow: 0 4px 0 #d63031; }
+        button:active { transform: translateY(3px); box-shadow: none; }
+
+        /* --- 結果頁面樣式整理 --- */
+        #result-screen { display: none; }
+        .result-img { 
+            /* 放大圖片並確保不規則陰影 */
+            width: 220px; 
+            height: 220px; 
+            object-fit: contain; 
+            margin: -10px auto 1rem; /* 使用負 margin 讓佈局更緊湊 */
+            display: block;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2)); /* 配合圖片形狀的陰影 */
+            background: transparent !important;
+        }
+        .result-type { font-size: 1.4rem; font-weight: bold; color: var(--primary); margin: 0.5rem 0; line-height: 1.3; }
+        .result-desc { 
+            text-align: left; background: white; padding: 1rem; border-radius: 15px; 
+            font-size: 0.95rem; line-height: 1.6; color: #2c3e50; 
+            margin-bottom: 1rem; border: 1px solid #eee;
+            max-height: 150px; overflow-y: auto; /* 預防描述過長 */
+        }
+        
+        .score-table { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 1rem 0; background: rgba(0,0,0,0.03); padding: 12px; border-radius: 15px; }
+        .score-box { padding: 8px; border-radius: 10px; background: white; border-top: 4px solid #ccc; }
+        .score-label { font-size: 0.7rem; color: #666; font-weight: bold; display: block; }
+        .score-num { font-size: 1.2rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="start-screen">
+        <div style="font-size: 3.5rem; margin-bottom: 1rem;">🧭</div>
+        <h1>職業靈魂導航</h1>
+        <p style="color: #666;">找出你的 RIASEC 核心特質</p>
+        <button class="btn-yes" onclick="startGame()" style="width:100%">開始探索之旅</button>
+    </div>
+
+    <div id="quiz-screen" style="display:none;">
+        <div class="progress">QUESTION <span id="current-idx">1</span> / 18</div>
+        <div class="question-text" id="q-text"></div>
+        <div class="btn-group">
+            <button class="btn-yes" onclick="answer(true)">是 / 與我相似</button>
+            <button class="btn-no" onclick="answer(false)">否 / 與我不相似</button>
+        </div>
+    </div>
+
+    <div id="result-screen">
+        <img id="res-img" src="" class="result-img" alt="職業角色">
+        <div class="result-type" id="res-type"></div>
+        <div class="result-desc" id="res-desc"></div>
+        
+        <div class="score-table">
+            <div id="box-R" class="score-box" style="border-top-color: var(--R)"><span class="score-label">R 實作</span><span class="score-num" id="r-R">0</span></div>
+            <div id="box-I" class="score-box" style="border-top-color: var(--I)"><span class="score-label">I 研究</span><span class="score-num" id="r-I">0</span></div>
+            <div id="box-A" class="score-box" style="border-top-color: var(--A)"><span class="score-label">A 藝術</span><span class="score-num" id="r-A">0</span></div>
+            <div id="box-S" class="score-box" style="border-top-color: var(--S)"><span class="score-label">S 社會</span><span class="score-num" id="r-S">0</span></div>
+            <div id="box-E" class="score-box" style="border-top-color: var(--E)"><span class="score-label">E 企業</span><span class="score-num" id="r-E">0</span></div>
+            <div id="box-C" class="score-box" style="border-top-color: var(--C)"><span class="score-label">C 常規</span><span class="score-num" id="r-C">0</span></div>
+        </div>
+        <button class="btn-yes" style="width:100%;" onclick="location.reload()">重新探索</button>
+    </div>
+</div>
+
+<script>
+    const rawQuestions = [
+        { t: "R", q: "我喜歡拆開東西再裝回去，研究它是怎麼動的。" },
+        { t: "R", q: "比起坐在教室聽講，我更喜歡上體育課或在戶外活動。" },
+        { t: "R", q: "我喜歡用剪刀、螺絲起子或美工刀做出實用的東西。" },
+        { t: "I", q: "我喜歡挑戰難題、玩數獨或要動腦筋的推理遊戲。" },
+        { t: "I", q: "我對科學實驗很有興趣，常想知道事情發生的原理。" },
+        { t: "I", q: "遇到問題時，我習慣先思考或找資料，不會急著問人。" },
+        { t: "A", q: "我喜歡畫畫、拍照或玩音樂，用這些方式來表達我的心情。" },
+        { t: "A", q: "我不喜歡死板的規定，喜歡有自由發揮想像力的空間。" },
+        { t: "A", q: "我對漂亮的設計、電影畫面或舞台表演很有感覺。" },
+        { t: "S", q: "我喜歡教同學功課，而且能很有耐心地解釋到他聽懂。" },
+        { t: "S", q: "朋友心情不好或遇到困難時，常會找我聊天、尋求安慰。" },
+        { t: "S", q: "我喜歡參加分組合作或去當志工，覺得幫助別人很有意義。" },
+        { t: "E", q: "我很有自信能說服同學，讓大家接受我的點子或建議。" },
+        { t: "E", q: "在分組報告時，我喜歡當組長，分配大家該做什麼事。" },
+        { t: "E", q: "我喜歡策劃活動（如慶生或比賽），這讓我很有成就感。" },
+        { t: "C", q: "我喜歡把筆記整理得很整齊，或是把書桌東西分類放好。" },
+        { t: "C", q: "我做事很仔細，會照著所需要的步驟，一步步把事情做好。" },
+        { t: "C", q: "我擅長檢查細節，能耐心地找出錯字或算錯的地方。" }
+    ];
+
+    const resultsMap = {
+        "R": { n: "實作型", d: "【實作型】喜愛動手操作與戶外活動，擅長運用工具解決具體問題。", img: "r.png" },
+        "I": { n: "研究型", d: "【研究型】熱衷思考與找答案，擅長邏輯推理、觀察與科學分析。", img: "i.png" },
+        "A": { n: "藝術型", d: "【藝術型】追求創意與美感，喜歡自由想像且直覺敏銳。", img: "a.png" },
+        "S": { n: "社會型", d: "【社會型】樂於助人與交流，擅長分享知識並關懷他人心情。", img: "s.png" },
+        "E": { n: "企業型", d: "【企業型】具備領導力與自信，擅長說服他人與策劃活動。", img: "e.png" },
+        "C": { n: "常規型", d: "【常規型】重視細節與條理，做事仔細且擅長整理與流程控管。", img: "c.png" }
+    };
+
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    let questions = shuffle([...rawQuestions]);
+    let currentIdx = 0;
+    let scores = { R:0, I:0, A:0, S:0, E:0, C:0 };
+    let totalYes = 0;
+
+    function startGame() {
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        showQuestion();
+    }
+
+    function showQuestion() {
+        document.getElementById('q-text').innerText = questions[currentIdx].q;
+        document.getElementById('current-idx').innerText = currentIdx + 1;
+    }
+
+    function answer(isYes) {
+        if(isYes) {
+            scores[questions[currentIdx].t]++;
+            totalYes++;
+        }
+        currentIdx++;
+        if(currentIdx < questions.length) showQuestion();
+        else showResult();
+    }
+
+    function showResult() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        
+        for(let type in scores) document.getElementById(`r-${type}`).innerText = scores[type];
+
+        let resImg = document.getElementById('res-img');
+        let resType = document.getElementById('res-type');
+        let resDesc = document.getElementById('res-desc');
+
+        if (totalYes === 18) {
+            resImg.src = "all.png";
+            resType.innerText = "全能進取型";
+            resDesc.innerText = "你的興趣也太廣泛了，已經是超人了吧？（認真點啦！）";
+        } else if (totalYes === 0) {
+            resImg.src = "none.png";
+            resType.innerText = "潛力待發型";
+            resDesc.innerText = "天生我才必有用！試試再思考一下你自己的特質？";
+        } else {
+            let sorted = Object.keys(scores).sort((a, b) => scores[b] - scores[a]);
+            let maxScore = scores[sorted[0]];
+            
+            let topTypes = sorted.filter(t => scores[t] === maxScore).slice(0, 3);
+            if (topTypes.length < 3) {
+                let secondScore = scores[sorted[topTypes.length]];
+                if (secondScore > 0) {
+                    let secondTypes = sorted.filter(t => scores[t] === secondScore);
+                    topTypes = topTypes.concat(secondTypes).slice(0, 3);
+                }
+            }
+
+            resType.innerText = topTypes.map(t => resultsMap[t].n).join(' / ') + ` (${topTypes.join('')} 型)`;
+            resImg.src = resultsMap[topTypes[0]].img; 
+            resDesc.innerHTML = topTypes.map(t => `<div>${resultsMap[t].d}</div>`).join('');
+        }
+    }
+</script>
+</body>
+</html>
